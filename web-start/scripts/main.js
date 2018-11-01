@@ -60,13 +60,51 @@ function loadMessages() {
 
 // Saves a new message on the Firebase DB.
 function saveMessage(messageText) {
-  // TODO 8: Push a new message to Firebase.
+  return firebase.database().ref('/messages').push({
+    name: getUserName(),
+    text: messageText,
+    profilePicUrl: getProfilePicUrl()
+  }).catch(function(error){
+    console.error('Error writing new message to Firebase Database', error );
+  });
 }
+
+// function saveImageMessage(file) {
+//   firebase.database().ref('/messages/').push({
+//     name: getUserName(),
+//     imageUrl: LOADING_IMAGE_URL,
+//     profilePicUrl: getProfilePicUrl()
+//   }).then(function(messageRef) {
+//     var filePath = firebase.auth().currentUser.uid + '/' + messageRef.key + '/' + file.name;
+//     return firebase.storage().ref(filePath).put(file).then(function(fileSnapshot) {
+//       return fileSnapshot.ref.getDownloadURL().then((url) => {
+//         return messageRef.update({
+//           imageUrl: url,
+//           storageUri: fileSnapshot.metadata.fullPath
+//         });
+//       });
+//     });
+//   }).catch(function(error) {
+//     console.error('There was an error uploading a file to Cloud Storage:', error);
+//   });
+// }
 
 // Saves a new message containing an image in Firebase.
 // This first saves the image in Firebase storage.
-function saveImageMessage(file) {
-  // TODO 9: Posts a new image as a message.
+async function saveImageMessage(file) {
+  let messageRef = await firebase.database().ref('/messages').push({
+    name: getUserName(),
+    imageUrl: LOADING_IMAGE_URL,
+    profilePicUrl: getProfilePicUrl()
+  });
+
+  const filePath = firebase.auth().currentUser.uid + '/' + messageRef.key + '/' + file.name;
+  let fileSnapshot = await firebase.storage().ref(filePath).put(file);
+
+  await messageRef.update({
+    imageUrl: await fileSnapshot.ref.getDownloadURL(),
+    storageUri: fileSnapshot.metadata.fullPath
+  });
 }
 
 // Saves the messaging device token to the datastore.
