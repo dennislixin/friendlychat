@@ -108,13 +108,28 @@ async function saveImageMessage(file) {
 }
 
 // Saves the messaging device token to the datastore.
-function saveMessagingDeviceToken() {
-  // TODO 10: Save the device token in the realtime datastore
+async function saveMessagingDeviceToken() {
+  const currentToken = await firebase.messaging().getToken().catch( error => {
+    console.error('Unable to get messaging token.', error);
+  });
+  if(currentToken) {
+    console.log('Got FCM device token:' + currentToken);
+    firebase.database().ref('/fcmTokens').child(currentToken)
+      .set(firebase.auth().currentUser.uid);
+  } else {
+    requestNotificationsPermissions();
+  }
 }
 
 // Requests permissions to show notifications.
 function requestNotificationsPermissions() {
-  // TODO 11: Request permissions to send notifications.
+  console.log('Requesting notification permission...');
+  firebase.messaging().requestPermission()
+  .then( ()=> {
+    saveMessagingDeviceToken();
+  }).catch( error => {
+    console.error('Unable to get permission to notify.', error);
+  }) 
 }
 
 // Triggered when a file is selected via the media picker.
